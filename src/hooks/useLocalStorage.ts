@@ -1,10 +1,8 @@
 // ============================================================
 // src/hooks/useLocalStorage.ts
 // ============================================================
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-// In-tab broadcaster. Same-tab writes fire this event so all
-// useLocalStorage instances with the same key re-render.
 const listeners = new Map<string, Set<(value: unknown) => void>>();
 
 function broadcast(key: string, value: unknown) {
@@ -26,12 +24,19 @@ export function useLocalStorage<T>(
     }
   });
 
-  // Persist on every change, AND broadcast to same-tab listeners.
+  // Keep a ref to the latest value so the setter can read it
+  // without needing `storedValue` in its dependency array.
+  const storedValueRef = useRef(storedValue);
+  useEffect(() => {
+    storedValueRef.current = storedValue;
+  }, [storedValue]);
+
+  // Persist on every change.
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
     } catch {
-      // ignore quota/private-mode errors
+      // ignore
     }
   }, [key, storedValue]);
 
@@ -55,7 +60,7 @@ export function useLocalStorage<T>(
       try {
         setStoredValue(JSON.parse(event.newValue) as T);
       } catch {
-        // ignore malformed values from other tabs
+        // ignore
       }
     }
 
@@ -65,15 +70,15 @@ export function useLocalStorage<T>(
 
   const setValue = useCallback(
     (value: T | ((prev: T) => T)) => {
-      setStoredValue((prev) => {
-        const next =
-          typeof value === "function"
-            ? (value as (p: T) => T)(prev)
-            : value;
-        // Broadcast to other same-tab instances.
-        broadcast(key, next);
-        return next;
-      });
+      // Compute the next value OUTSIDE the updater — no side effects.
+      const current = storedValueRef.current;
+      const next =
+        typeof value === "function" ? (value as (p: T) => T)(current) : value;
+
+      // 1. Update local state.
+      setStoredValue(next);
+      // 2. Broadcast to same-tab instances.
+      broadcast(key, next);
     },
     [key]
   );
