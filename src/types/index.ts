@@ -48,6 +48,6 @@ export interface QuickLink {
   id: string;
   label: string;
   icon: LucideIcon;
-  href: string;
+  target: string;
   hint: string;
 }

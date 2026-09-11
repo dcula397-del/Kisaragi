@@ -87,7 +87,7 @@ export default function App() {
                   <FeaturedWidget backgroundImagePath={QUOTE_IMAGE_PATH} />
                 </div>
                 <div className="xl:col-span-1">
-                  <ProgressWidgets />
+                  <ProgressWidgets onNavigate={setActiveNav} />
                 </div>
               </div>
             </>

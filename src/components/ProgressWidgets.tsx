@@ -4,44 +4,46 @@
 import { motion } from "framer-motion";
 import {
   ArrowUpRight,
-  BookMarked,
-  CalendarCheck,
-  Code2,
-  ExternalLink,
+  Bookmark,
+  FlaskConical,
   GraduationCap,
-  Sigma,
+  NotebookPen,
   TrendingUp,
 } from "lucide-react";
 import type { ProgressTopic, QuickLink } from "../types";
 
+interface ProgressWidgetsProps {
+  onNavigate?: (id: string) => void;
+}
+
 const QUICK_LINKS: QuickLink[] = [
   {
     id: "q1",
-    label: "IGCSE Hub",
-    hint: "Past papers & mark schemes",
-    icon: GraduationCap,
-    href: "#",
+    label: "Bookmarks",
+    hint: "Your saved items",
+    icon: Bookmark,
+    target: "bookmarks",
   },
   {
     id: "q2",
-    label: "Snippet Vault",
-    hint: "Reusable code fragments",
-    icon: Code2,
-    href: "#",
+    label: "Notes",
+    hint: "Your written thoughts",
+    icon: NotebookPen,
+    target: "notes",
   },
   {
     id: "q3",
-    label: "Formula Sheet",
-    hint: "Math & physics constants",
-    icon: Sigma,
-    href: "#",
+    label: "Library",
+    hint: "Past papers & mark schemes",
+    icon: GraduationCap,
+    target: "library",
   },
   {
     id: "q4",
-    label: "Revision Plan",
-    hint: "This week's schedule",
-    icon: CalendarCheck,
-    href: "#",
+    label: "Research",
+    hint: "Threads in progress",
+    icon: FlaskConical,
+    target: "research",
   },
 ];
 
@@ -90,7 +92,9 @@ const itemVariants = {
   },
 };
 
-export default function ProgressWidgets() {
+export default function ProgressWidgets({
+  onNavigate,
+}: ProgressWidgetsProps) {
   return (
     <motion.div
       variants={containerVariants}
@@ -108,7 +112,7 @@ export default function ProgressWidgets() {
         <header className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5">
-              <BookMarked className="h-4 w-4 text-pink-300" />
+              <Bookmark className="h-4 w-4 text-pink-300" />
             </div>
             <div>
               <h2 className="text-sm font-semibold tracking-tight text-white">
@@ -125,9 +129,10 @@ export default function ProgressWidgets() {
 
             return (
               <li key={link.id}>
-                <a
-                  href={link.href}
-                  className="group flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/[0.08]"
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.(link.target)}
+                  className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/[0.08]"
                 >
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-white/10 to-white/[0.02] text-slate-300 transition-colors group-hover:text-pink-200">
                     <Icon className="h-4 w-4" />
@@ -142,8 +147,8 @@ export default function ProgressWidgets() {
                     </span>
                   </span>
 
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-pink-300" />
-                </a>
+                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-slate-600 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-pink-300" />
+                </button>
               </li>
             );
           })}
@@ -166,7 +171,9 @@ export default function ProgressWidgets() {
               <h2 className="text-sm font-semibold tracking-tight text-white">
                 Topic Mastery
               </h2>
-              <p className="text-[11px] text-slate-500">Rolling 30-day window</p>
+              <p className="text-[11px] text-slate-500">
+                Rolling 30-day window
+              </p>
             </div>
           </div>
 
