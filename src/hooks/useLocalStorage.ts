@@ -3,42 +3,52 @@
 // ============================================================
 import { useCallback, useEffect, useState } from "react";
 
-/**
- * useState, but persisted to localStorage.
- *
- * - Reads the initial value from localStorage on mount.
- * - Falls back to `initialValue` if nothing is stored (or if parsing fails).
- * - Writes to localStorage on every change.
- * - Syncs across tabs (if you open the app in two tabs, they stay in sync).
- *
- * @param key           localStorage key
- * @param initialValue  default value if nothing is stored
- */
+// In-tab broadcaster. Same-tab writes fire this event so all
+// useLocalStorage instances with the same key re-render.
+const listeners = new Map<string, Set<(value: unknown) => void>>();
+
+function broadcast(key: string, value: unknown) {
+  const set = listeners.get(key);
+  if (!set) return;
+  set.forEach((fn) => fn(value));
+}
+
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((prev: T) => T)) => void] {
-  // Read once on mount. Lazy initializer avoids reading on every render.
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const raw = window.localStorage.getItem(key);
       return raw ? (JSON.parse(raw) as T) : initialValue;
     } catch {
-      // Corrupt JSON, private mode, etc. — fall back silently.
       return initialValue;
     }
   });
 
-  // Persist on every change.
+  // Persist on every change, AND broadcast to same-tab listeners.
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
     } catch {
-      // Quota exceeded / private mode — ignore.
+      // ignore quota/private-mode errors
     }
   }, [key, storedValue]);
 
-  // Sync with other tabs.
+  // Subscribe to same-tab broadcasts.
+  useEffect(() => {
+    const set = listeners.get(key) ?? new Set();
+    const handler = (value: unknown) => setStoredValue(value as T);
+    set.add(handler);
+    listeners.set(key, set);
+
+    return () => {
+      set.delete(handler);
+      if (set.size === 0) listeners.delete(key);
+    };
+  }, [key]);
+
+  // Subscribe to cross-tab storage events.
   useEffect(() => {
     function handleStorage(event: StorageEvent) {
       if (event.key !== key || event.newValue === null) return;
@@ -53,12 +63,20 @@ export function useLocalStorage<T>(
     return () => window.removeEventListener("storage", handleStorage);
   }, [key]);
 
-  // setter mirrors useState's functional-update signature.
-  const setValue = useCallback((value: T | ((prev: T) => T)) => {
-    setStoredValue((prev) =>
-      typeof value === "function" ? (value as (p: T) => T)(prev) : value
-    );
-  }, []);
+  const setValue = useCallback(
+    (value: T | ((prev: T) => T)) => {
+      setStoredValue((prev) => {
+        const next =
+          typeof value === "function"
+            ? (value as (p: T) => T)(prev)
+            : value;
+        // Broadcast to other same-tab instances.
+        broadcast(key, next);
+        return next;
+      });
+    },
+    [key]
+  );
 
   return [storedValue, setValue];
 }

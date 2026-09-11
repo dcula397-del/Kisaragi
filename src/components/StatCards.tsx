@@ -1,6 +1,7 @@
 // ============================================================
 // src/components/StatCards.tsx
 // ============================================================
+import { useBookmarks } from "../hooks/useBookmarks";
 import { motion } from "framer-motion";
 import {
   ArrowDownRight,
@@ -98,6 +99,12 @@ function TrendPill({ stat }: { stat: StatItem }) {
 }
 
 export default function StatCards() {
+  const { count: bookmarkCount } = useBookmarks();
+
+  const liveValues: Record<string, number> = {
+     bookmarks: bookmarkCount,
+   };
+
   return (
     <motion.section
       variants={container}
@@ -146,7 +153,7 @@ export default function StatCards() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.15 }}
               >
-                {stat.value.toLocaleString()}
+                {(liveValues[stat.id] ?? stat.value).toLocaleString()}
               </motion.p>
             </div>
 
