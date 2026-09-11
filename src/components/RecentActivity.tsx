@@ -1,6 +1,7 @@
 // ============================================================
 // src/components/RecentActivity.tsx
 // ============================================================
+import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -11,8 +12,10 @@ import {
   GraduationCap,
   Microscope,
   Sparkles,
+  Stars,
 } from "lucide-react";
 import type { ActivityItem } from "../types";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 const ACTIVITIES: ActivityItem[] = [
   {
@@ -103,6 +106,7 @@ const rowVariants = {
 
 export default function RecentActivity() {
   const [now, setNow] = useState(() => Date.now());
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -189,13 +193,43 @@ export default function RecentActivity() {
                   </p>
                 </div>
 
-                <time
-                  dateTime={activity.timestamp.toISOString()}
-                  className="mt-1 shrink-0 whitespace-nowrap text-[11px] tabular-nums text-slate-500"
-                  title={activity.timestamp.toLocaleString()}
-                >
-                  {formatRelative(activity.timestamp, now)}
-                </time>
+                <div className="mt-0.5 flex shrink-0 items-center gap-2">
+
+                  <time
+                    dateTime={activity.timestamp.toISOString()}
+                    className="whitespace-nowrap text-[11px] tabular-nums text-slate-500"
+                    title={activity.timestamp.toLocaleString()}
+                  >
+                    {formatRelative(activity.timestamp, now)}
+                  </time>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleBookmark({
+                        id: activity.id,
+                        title: activity.title,
+                        description: activity.description,
+                        tag: activity.tag,
+                        tagColor: activity.tagColor,
+                      })
+                    }
+                    aria-label={
+                      isBookmarked(activity.id) ? "Remove bookmark" : "Add bookmark"
+                    }
+                    className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-200 focus:opacity-100 data-[bookmarked=true]:opacity-100"
+                    data-bookmarked={isBookmarked(activity.id)}
+                  >
+                    <Star
+                      className={`h-3.5 w-3.5 transition-colors ${
+                        isBookmarked(activity.id)
+                          ? "fill-pink-300 text-pink-300"
+                          : "text-slate-500"
+                      }`}
+                    />
+                  </button>
+                </div>
+
               </div>
             </motion.li>
           );

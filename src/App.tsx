@@ -8,6 +8,7 @@ import StatCards from "./components/StatCards";
 import RecentActivity from "./components/RecentActivity";
 import FeaturedWidget from "./components/FeaturedWidget";
 import ProgressWidgets from "./components/ProgressWidgets";
+import BookmarksPage from "./components/BookmarksPage";
 import ComingSoon from "./components/ComingSoon";
 
 /**
@@ -72,22 +73,24 @@ export default function App() {
             userName="Senpai"
           />
 
-          {activeNav === "dashboard" ? (
+          {activeNav === "dashboard" && (
             <>
               <StatCards />
-
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="space-y-6 xl:col-span-2">
                   <RecentActivity />
                   <FeaturedWidget backgroundImagePath={QUOTE_IMAGE_PATH} />
                 </div>
-
                 <div className="xl:col-span-1">
                   <ProgressWidgets />
                 </div>
               </div>
             </>
-          ) : (
+          )}
+
+          {activeNav === "bookmarks" && <BookmarksPage />}
+
+          {activeNav !== "dashboard" && activeNav !== "bookmarks" && (
             <ComingSoon section={activeNav} />
           )}
 
