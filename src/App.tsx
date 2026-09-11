@@ -10,6 +10,7 @@ import FeaturedWidget from "./components/FeaturedWidget";
 import ProgressWidgets from "./components/ProgressWidgets";
 import BookmarksPage from "./components/BookmarksPage";
 import NotesPage from "./components/NotesPage";
+import ResearchPage from "./components/ResearchPage";
 import ComingSoon from "./components/ComingSoon";
 
 /**
@@ -94,12 +95,14 @@ export default function App() {
           )}
 
           {activeNav === "bookmarks" && <BookmarksPage searchQuery={searchQuery} />}
-
           {activeNav === "notes" && <NotesPage searchQuery={searchQuery} />}
+          {activeNav === "research" && <ResearchPage searchQuery={searchQuery} />}
+
 
           {activeNav !== "dashboard" &&
             activeNav !== "bookmarks" &&
-            activeNav !== "notes" && <ComingSoon section={activeNav} />}
+            activeNav !== "notes" &&
+            activeNav !== "research" && <ComingSoon section={activeNav} />}
 
           <footer className="pb-4 pt-2 text-center text-[11px] text-slate-600">
             KISARAGI Console · Built with Vite, React, Tailwind CSS v4 &amp; Framer
