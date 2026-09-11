@@ -7,6 +7,10 @@ import { FileText, NotebookPen, Plus } from "lucide-react";
 import { useNotes } from "../hooks/useNotes";
 import NoteEditor from "./NoteEditor";
 
+interface NotesPageProps {
+  searchQuery?: string;
+}
+
 function formatWhen(iso: string): string {
   const date = new Date(iso);
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -27,17 +31,29 @@ function previewText(body: string): string {
   return trimmed.length > 80 ? trimmed.slice(0, 80) + "…" : trimmed;
 }
 
-export default function NotesPage() {
+export default function NotesPage({ searchQuery = "" }: NotesPageProps) {
   const { sortedNotes, addNote, updateNote, removeNote } = useNotes();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "editor">("list");
 
-  const activeNote = useMemo(
-    () => sortedNotes.find((n) => n.id === activeId) ?? null,
-    [sortedNotes, activeId]
+  // Filter notes by search query (title or body)
+  const query = searchQuery.trim().toLowerCase();
+  const visibleNotes = useMemo(
+    () =>
+      query
+        ? sortedNotes.filter((n) =>
+            [n.title, n.body].some((f) => f.toLowerCase().includes(query))
+          )
+        : sortedNotes,
+    [sortedNotes, query]
   );
 
-  // If the active note gets deleted, fall back to the list.
+  const activeNote = useMemo(
+    () => visibleNotes.find((n) => n.id === activeId) ?? null,
+    [visibleNotes, activeId]
+  );
+
+  // If the active note gets deleted or filtered out, fall back to the list.
   useEffect(() => {
     if (activeId && !activeNote) {
       setActiveId(null);
@@ -47,10 +63,10 @@ export default function NotesPage() {
 
   // Auto-select first note when data is present and nothing is selected.
   useEffect(() => {
-    if (!activeId && sortedNotes.length > 0) {
-      setActiveId(sortedNotes[0].id);
+    if (!activeId && visibleNotes.length > 0) {
+      setActiveId(visibleNotes[0].id);
     }
-  }, [activeId, sortedNotes]);
+  }, [activeId, visibleNotes]);
 
   function handleNew() {
     const note = addNote();
@@ -89,11 +105,15 @@ export default function NotesPage() {
               Notes
             </h2>
             <p className="text-[11px] text-slate-500">
-              {sortedNotes.length === 0
-                ? "Nothing written yet"
-                : `${sortedNotes.length} note${
-                    sortedNotes.length === 1 ? "" : "s"
-                  }`}
+              {query
+                ? `${visibleNotes.length} match${
+                    visibleNotes.length === 1 ? "" : "es"
+                  }`
+                : sortedNotes.length === 0
+                  ? "Nothing written yet"
+                  : `${sortedNotes.length} note${
+                      sortedNotes.length === 1 ? "" : "s"
+                    }`}
             </p>
           </div>
         </div>
@@ -108,7 +128,7 @@ export default function NotesPage() {
         </button>
       </header>
 
-      {/* Empty state */}
+      {/* Empty state — no notes at all */}
       {sortedNotes.length === 0 && (
         <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10">
@@ -122,8 +142,17 @@ export default function NotesPage() {
         </div>
       )}
 
+      {/* Empty state — search returned nothing */}
+      {sortedNotes.length > 0 && visibleNotes.length === 0 && (
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm text-slate-500">
+            No notes match "{searchQuery}"
+          </p>
+        </div>
+      )}
+
       {/* Master–detail layout */}
-      {sortedNotes.length > 0 && (
+      {visibleNotes.length > 0 && (
         <div className="grid h-[640px] grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)]">
           {/* List */}
           <div
@@ -132,7 +161,7 @@ export default function NotesPage() {
             }`}
           >
             <AnimatePresence initial={false}>
-              {sortedNotes.map((note) => {
+              {visibleNotes.map((note) => {
                 const isActive = note.id === activeId;
 
                 return (
@@ -146,9 +175,7 @@ export default function NotesPage() {
                     type="button"
                     onClick={() => handleSelect(note.id)}
                     className={`group relative block w-full border-b border-white/[0.05] px-4 py-3.5 text-left transition-colors ${
-                      isActive
-                        ? "bg-fuchsia-500/[0.08]"
-                        : "hover:bg-white/[0.03]"
+                      isActive ? "bg-fuchsia-500/[0.08]" : "hover:bg-white/[0.03]"
                     }`}
                   >
                     {isActive && (

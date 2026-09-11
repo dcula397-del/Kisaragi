@@ -1,7 +1,6 @@
 // ============================================================
 // src/components/RecentActivity.tsx
 // ============================================================
-import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -12,10 +11,14 @@ import {
   GraduationCap,
   Microscope,
   Sparkles,
-  Stars,
+  Star,
 } from "lucide-react";
 import type { ActivityItem } from "../types";
 import { useBookmarks } from "../hooks/useBookmarks";
+
+interface RecentActivityProps {
+  searchQuery?: string;
+}
 
 const ACTIVITIES: ActivityItem[] = [
   {
@@ -104,7 +107,9 @@ const rowVariants = {
   },
 };
 
-export default function RecentActivity() {
+export default function RecentActivity({
+  searchQuery = "",
+}: RecentActivityProps) {
   const [now, setNow] = useState(() => Date.now());
   const { isBookmarked, toggleBookmark } = useBookmarks();
 
@@ -112,6 +117,16 @@ export default function RecentActivity() {
     const id = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  // Filter by search query (matches title, description, or tag)
+  const query = searchQuery.trim().toLowerCase();
+  const visibleActivities = query
+    ? ACTIVITIES.filter((a) =>
+        [a.title, a.description, a.tag].some((field) =>
+          field.toLowerCase().includes(query)
+        )
+      )
+    : ACTIVITIES;
 
   return (
     <motion.section
@@ -133,7 +148,11 @@ export default function RecentActivity() {
               Recent Activity
             </h2>
             <p className="text-[11px] text-slate-500">
-              Your latest moves across the console
+              {query
+                ? `${visibleActivities.length} match${
+                    visibleActivities.length === 1 ? "" : "es"
+                  }`
+                : "Your latest moves across the console"}
             </p>
           </div>
         </div>
@@ -147,94 +166,105 @@ export default function RecentActivity() {
         </button>
       </header>
 
+      {/* Empty search result */}
+      {visibleActivities.length === 0 && (
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm text-slate-500">
+            No activity matches "{searchQuery}"
+          </p>
+        </div>
+      )}
+
       {/* List */}
-      <motion.ul
-        variants={listVariants}
-        initial="hidden"
-        animate="show"
-        className="divide-y divide-white/[0.05]"
-      >
-        {ACTIVITIES.map((activity) => {
-          const Icon = activity.icon;
+      {visibleActivities.length > 0 && (
+        <motion.ul
+          variants={listVariants}
+          initial="hidden"
+          animate="show"
+          className="divide-y divide-white/[0.05]"
+        >
+          {visibleActivities.map((activity) => {
+            const Icon = activity.icon;
 
-          return (
-            <motion.li
-              key={activity.id}
-              variants={rowVariants}
-              className="group relative px-6 py-4 transition-colors hover:bg-white/[0.03]"
-            >
-              {/* left accent bar on hover */}
-              <span
-                className={`absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-r-full bg-gradient-to-b ${activity.accent} transition-all duration-300 group-hover:h-10`}
-              />
+            return (
+              <motion.li
+                key={activity.id}
+                variants={rowVariants}
+                className="group relative px-6 py-4 transition-colors hover:bg-white/[0.03]"
+              >
+                {/* left accent bar on hover */}
+                <span
+                  className={`absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-r-full bg-gradient-to-b ${activity.accent} transition-all duration-300 group-hover:h-10`}
+                />
 
-              <div className="flex items-start gap-4">
-                <div
-                  className={`mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-gradient-to-br ${activity.accent} bg-opacity-10 shadow-lg shadow-black/30 transition-transform duration-300 group-hover:scale-105`}
-                >
-                  <Icon className="h-[18px] w-[18px] text-white/90" />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <h3 className="truncate text-sm font-medium text-slate-100">
-                      {activity.title}
-                    </h3>
-
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${activity.tagColor}`}
-                    >
-                      {activity.tag}
-                    </span>
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-gradient-to-br ${activity.accent} bg-opacity-10 shadow-lg shadow-black/30 transition-transform duration-300 group-hover:scale-105`}
+                  >
+                    <Icon className="h-[18px] w-[18px] text-white/90" />
                   </div>
 
-                  <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-slate-400">
-                    {activity.description}
-                  </p>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <h3 className="truncate text-sm font-medium text-slate-100">
+                        {activity.title}
+                      </h3>
 
-                <div className="mt-0.5 flex shrink-0 items-center gap-2">
+                      <span
+                        className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${activity.tagColor}`}
+                      >
+                        {activity.tag}
+                      </span>
+                    </div>
 
-                  <time
-                    dateTime={activity.timestamp.toISOString()}
-                    className="whitespace-nowrap text-[11px] tabular-nums text-slate-500"
-                    title={activity.timestamp.toLocaleString()}
-                  >
-                    {formatRelative(activity.timestamp, now)}
-                  </time>
+                    <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-slate-400">
+                      {activity.description}
+                    </p>
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleBookmark({
-                        id: activity.id,
-                        title: activity.title,
-                        description: activity.description,
-                        tag: activity.tag,
-                        tagColor: activity.tagColor,
-                      })
-                    }
-                    aria-label={
-                      isBookmarked(activity.id) ? "Remove bookmark" : "Add bookmark"
-                    }
-                    className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-200 focus:opacity-100 data-[bookmarked=true]:opacity-100"
-                    data-bookmarked={isBookmarked(activity.id)}
-                  >
-                    <Star
-                      className={`h-3.5 w-3.5 transition-colors ${
+                  <div className="mt-0.5 flex shrink-0 items-center gap-2">
+                    <time
+                      dateTime={activity.timestamp.toISOString()}
+                      className="whitespace-nowrap text-[11px] tabular-nums text-slate-500"
+                      title={activity.timestamp.toLocaleString()}
+                    >
+                      {formatRelative(activity.timestamp, now)}
+                    </time>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleBookmark({
+                          id: activity.id,
+                          title: activity.title,
+                          description: activity.description,
+                          tag: activity.tag,
+                          tagColor: activity.tagColor,
+                        })
+                      }
+                      aria-label={
                         isBookmarked(activity.id)
-                          ? "fill-pink-300 text-pink-300"
-                          : "text-slate-500"
-                      }`}
-                    />
-                  </button>
+                          ? "Remove bookmark"
+                          : "Add bookmark"
+                      }
+                      className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-200 focus:opacity-100 data-[bookmarked=true]:opacity-100"
+                      data-bookmarked={isBookmarked(activity.id)}
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 transition-colors ${
+                          isBookmarked(activity.id)
+                            ? "fill-pink-300 text-pink-300"
+                            : "text-slate-500"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
-
-              </div>
-            </motion.li>
-          );
-        })}
-      </motion.ul>
+              </motion.li>
+            );
+          })}
+        </motion.ul>
+      )}
     </motion.section>
   );
 }

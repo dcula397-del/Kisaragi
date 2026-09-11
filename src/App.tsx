@@ -19,13 +19,14 @@ import ComingSoon from "./components/ComingSoon";
  *
  * Leave them as `undefined` to see the built-in CSS/SVG placeholders.
  */
-const CHARACTER_IMAGE_PATH: string | "public/character.png" = "/character.png";
+const CHARACTER_IMAGE_PATH = "/character.png";
 const QUOTE_IMAGE_PATH: string | undefined = undefined;
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeNav, setActiveNav] = useState("dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="relative min-h-screen bg-[#0d0b18] text-slate-100 antialiased selection:bg-fuchsia-500/30 selection:text-white">
@@ -68,10 +69,13 @@ export default function App() {
         }`}
       >
         <div className="mx-auto max-w-[1560px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+
           <HeaderBanner
             onMenuClick={() => setMobileOpen(true)}
             characterImagePath={CHARACTER_IMAGE_PATH}
             userName="Senpai"
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
 
           {activeNav === "dashboard" && (
@@ -79,7 +83,7 @@ export default function App() {
               <StatCards />
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                 <div className="space-y-6 xl:col-span-2">
-                  <RecentActivity />
+                  <RecentActivity searchQuery={searchQuery} />
                   <FeaturedWidget backgroundImagePath={QUOTE_IMAGE_PATH} />
                 </div>
                 <div className="xl:col-span-1">
@@ -89,9 +93,9 @@ export default function App() {
             </>
           )}
 
-          {activeNav === "bookmarks" && <BookmarksPage />}
+          {activeNav === "bookmarks" && <BookmarksPage searchQuery={searchQuery} />}
 
-          {activeNav === "notes" && <NotesPage />}
+          {activeNav === "notes" && <NotesPage searchQuery={searchQuery} />}
 
           {activeNav !== "dashboard" &&
             activeNav !== "bookmarks" &&

@@ -2,6 +2,7 @@
 // src/components/StatCards.tsx
 // ============================================================
 import { useBookmarks } from "../hooks/useBookmarks";
+import { useNotes } from "../hooks/useNotes";
 import { motion } from "framer-motion";
 import {
   ArrowDownRight,
@@ -100,9 +101,11 @@ function TrendPill({ stat }: { stat: StatItem }) {
 
 export default function StatCards() {
   const { count: bookmarkCount } = useBookmarks();
+  const { count: noteCount } = useNotes();
 
   const liveValues: Record<string, number> = {
-     bookmarks: bookmarkCount,
+    bookmarks: bookmarkCount,
+    notes: noteCount,
    };
 
   return (

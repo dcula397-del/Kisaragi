@@ -5,6 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Bookmark, ExternalLink, Star, Trash2 } from "lucide-react";
 import { useBookmarks } from "../hooks/useBookmarks";
 
+interface BookmarksPageProps {
+  searchQuery?: string;
+}
+
 const listVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06 } },
@@ -33,8 +37,22 @@ function formatSavedAt(iso: string): string {
   });
 }
 
-export default function BookmarksPage() {
+export default function BookmarksPage({
+  searchQuery = "",
+}: BookmarksPageProps) {
   const { bookmarks, count, removeBookmark } = useBookmarks();
+
+  // Filter by search query
+  const query = searchQuery.trim().toLowerCase();
+  const visibleBookmarks = query
+    ? bookmarks.filter((b) =>
+        [b.title, b.description ?? "", b.tag ?? ""].some((field) =>
+          field.toLowerCase().includes(query)
+        )
+      )
+    : bookmarks;
+
+  const visibleCount = visibleBookmarks.length;
 
   return (
     <motion.section
@@ -56,15 +74,17 @@ export default function BookmarksPage() {
               Bookmarks
             </h2>
             <p className="text-[11px] text-slate-500">
-              {count === 0
-                ? "Nothing saved yet"
-                : `${count} saved item${count === 1 ? "" : "s"}`}
+              {query
+                ? `${visibleCount} match${visibleCount === 1 ? "" : "es"}`
+                : count === 0
+                  ? "Nothing saved yet"
+                  : `${count} saved item${count === 1 ? "" : "s"}`}
             </p>
           </div>
         </div>
       </header>
 
-      {/* Empty state */}
+      {/* Empty state — no bookmarks at all */}
       {count === 0 && (
         <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-2xl border border-fuchsia-400/20 bg-fuchsia-500/10">
@@ -74,14 +94,24 @@ export default function BookmarksPage() {
             No bookmarks yet
           </h3>
           <p className="max-w-sm text-[12.5px] leading-relaxed text-slate-500">
-            Hover any item in <span className="text-slate-300">Recent Activity</span>{" "}
-            on the dashboard and click the star to save it here.
+            Hover any item in{" "}
+            <span className="text-slate-300">Recent Activity</span> on the
+            dashboard and click the star to save it here.
+          </p>
+        </div>
+      )}
+
+      {/* Empty state — search returned nothing */}
+      {count > 0 && visibleCount === 0 && (
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm text-slate-500">
+            No bookmarks match "{searchQuery}"
           </p>
         </div>
       )}
 
       {/* List */}
-      {count > 0 && (
+      {visibleCount > 0 && (
         <motion.ul
           variants={listVariants}
           initial="hidden"
@@ -89,7 +119,7 @@ export default function BookmarksPage() {
           className="divide-y divide-white/[0.05]"
         >
           <AnimatePresence initial={false}>
-            {bookmarks.map((b) => (
+            {visibleBookmarks.map((b) => (
               <motion.li
                 key={b.id}
                 variants={rowVariants}

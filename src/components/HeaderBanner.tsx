@@ -1,7 +1,7 @@
 // ============================================================
 // src/components/HeaderBanner.tsx
 // ============================================================
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, CalendarDays, Menu, Search, Sparkles } from "lucide-react";
 import CharacterBanner from "./CharacterBanner";
@@ -11,6 +11,9 @@ interface HeaderBannerProps {
   /** e.g. "/character.png" */
   characterImagePath?: string;
   userName?: string;
+  searchQuery: string;
+
+  onSearchChange: (value: string) => void;
 }
 
 function getGreeting(hour: number): string {
@@ -24,6 +27,8 @@ export default function HeaderBanner({
   onMenuClick,
   characterImagePath,
   userName = "Senpai",
+  searchQuery,
+  onSearchChange,
 }: HeaderBannerProps) {
   const [now, setNow] = useState<Date>(() => new Date());
 
@@ -58,6 +63,30 @@ export default function HeaderBanner({
       }),
     [now]
   );
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Ctrl+K (or Cmd+K) focuses the search; Escape clears + blurs.
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const isK = e.key.toLowerCase() === "k";
+      const isMod = e.ctrlKey || e.metaKey;
+
+      if (isMod && isK) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+
+      if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
+        onSearchChange("");
+        searchInputRef.current?.blur();
+      }
+    }
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onSearchChange]);
 
   const greeting = getGreeting(now.getHours());
 
@@ -143,7 +172,10 @@ export default function HeaderBanner({
               <div className="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-[#151223]/70 px-4 py-3 transition-colors focus-within:border-fuchsia-400/40">
                 <Search className="h-4 w-4 shrink-0 text-slate-500 transition-colors group-focus-within:text-pink-300" />
                 <input
+                  ref={searchInputRef}
                   type="search"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
                   placeholder="Search notes, decks, research threads…"
                   className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
                 />
