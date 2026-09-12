@@ -3,17 +3,12 @@
 // ============================================================
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BookOpen,
-  Bookmark,
   ChevronLeft,
-  FlaskConical,
-  LayoutDashboard,
-  NotebookPen,
   Settings,
   Sparkles,
   X,
 } from "lucide-react";
-import type { NavItem } from "../types";
+import { NAV_ITEMS } from "../constants";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -23,14 +18,6 @@ interface SidebarProps {
   activeId: string;
   onNavigate: (id: string) => void;
 }
-
-const NAV_ITEMS: NavItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "library", label: "Library", icon: BookOpen, badge: 128 },
-  { id: "bookmarks", label: "Bookmarks", icon: Bookmark, badge: 24 },
-  { id: "notes", label: "Notes", icon: NotebookPen },
-  { id: "research", label: "Research", icon: FlaskConical, badge: 7 },
-];
 
 function SakuraMark({ className = "h-6 w-6" }: { className?: string }) {
   return (

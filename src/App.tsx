@@ -8,10 +8,10 @@ import StatCards from "./components/StatCards";
 import RecentActivity from "./components/RecentActivity";
 import FeaturedWidget from "./components/FeaturedWidget";
 import ProgressWidgets from "./components/ProgressWidgets";
-import BookmarksPage from "./components/BookmarksPage";
-import NotesPage from "./components/NotesPage";
-import ResearchPage from "./components/ResearchPage";
-import ComingSoon from "./components/ComingSoon";
+import BookmarksPage from "./pages/BookmarksPage";
+import NotesPage from "./pages/NotesPage";
+import ResearchPage from "./pages/ResearchPage";
+import ComingSoon from "./pages/ComingSoon";
 
 /**
  * Drop your artwork into the `public/` folder and set the paths here.

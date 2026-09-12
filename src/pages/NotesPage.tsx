@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, NotebookPen, Plus } from "lucide-react";
 import { useNotes } from "../hooks/useNotes";
-import NoteEditor from "./NoteEditor";
+import NoteEditor from "../components/NoteEditor";
 
 interface NotesPageProps {
   searchQuery?: string;
