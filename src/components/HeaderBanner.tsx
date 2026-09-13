@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, CalendarDays, Menu, Search, Sparkles } from "lucide-react";
 import CharacterBanner from "./CharacterBanner";
+import { useCharacterMood } from "../hooks/useCharacterMood";
 import { useFocusSessions } from "../hooks/useFocusSessions";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useNotes } from "../hooks/useNotes";
@@ -46,6 +47,7 @@ export default function HeaderBanner({
   const { streak, minutesToday } = useFocusSessions();
   const { count: bookmarkCount } = useBookmarks();
   const { count: noteCount } = useNotes();
+  const mood = useCharacterMood();
 
   // Is a focus session currently running? Read from the persisted state
   // that FocusTimer writes to localStorage.
@@ -247,7 +249,7 @@ export default function HeaderBanner({
 
         {/* ---------- Right: character slot ---------- */}
         <div className="relative min-h-[240px] lg:min-h-[340px]">
-          <CharacterBanner characterImagePath={characterImagePath} />
+                    <CharacterBanner mood={mood} />
 
           {/* name plate */}
           <div className="absolute bottom-5 left-5 right-5 z-10">

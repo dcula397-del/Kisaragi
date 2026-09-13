@@ -1,7 +1,7 @@
 // ============================================================
 // src/App.tsx
 // ============================================================
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import HeaderBanner from "./components/HeaderBanner";
 import StatCards from "./components/StatCards";
@@ -30,10 +30,36 @@ export default function App() {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Detect whether a focus session is running, to dim the ambient background.
+  const [focusRunning, setFocusRunning] = useState(false);
+  useEffect(() => {
+    function sync() {
+      try {
+        const raw = window.localStorage.getItem("kisaragi.focus.active");
+        if (!raw) return setFocusRunning(false);
+        const parsed = JSON.parse(raw) as { startedAt: number | null };
+        setFocusRunning(parsed.startedAt !== null);
+      } catch {
+        setFocusRunning(false);
+      }
+    }
+    sync();
+    window.addEventListener("storage", sync);
+    const id = window.setInterval(sync, 1000);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.clearInterval(id);
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[#0d0b18] text-slate-100 antialiased selection:bg-fuchsia-500/30 selection:text-white">
       {/* ---------------- Ambient background ---------------- */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <div
+        className={`pointer-events-none fixed inset-0 overflow-hidden transition-opacity duration-1000 ${
+          focusRunning ? "opacity-50" : "opacity-100"
+        }`}
+      >
         <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-fuchsia-600/20 blur-[130px]" />
         <div className="absolute right-[-10%] top-1/3 h-[460px] w-[460px] rounded-full bg-purple-600/15 blur-[130px]" />
         <div className="absolute bottom-[-10%] left-1/3 h-[420px] w-[420px] rounded-full bg-pink-500/10 blur-[130px]" />
