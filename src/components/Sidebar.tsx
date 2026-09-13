@@ -2,6 +2,7 @@
 // src/components/Sidebar.tsx
 // ============================================================
 import { AnimatePresence, motion } from "framer-motion";
+import { useFocusSessions } from "../hooks/useFocusSessions";
 import {
   ChevronLeft,
   Settings,
@@ -65,6 +66,8 @@ function SidebarContent({
   isMobile = false,
   idPrefix,
 }: SidebarContentProps) {
+  const { streak, minutesToday } = useFocusSessions();
+
   return (
     <div className="flex h-full flex-col">
       {/* Brand */}
@@ -212,7 +215,9 @@ function SidebarContent({
                 <p className="text-xs font-semibold text-pink-100">Focus Mode</p>
               </div>
               <p className="text-[11px] leading-relaxed text-slate-400">
-                Deep work streak of 12 days. Keep the momentum going.
+                {streak > 0
+                  ? `${streak} day streak · ${minutesToday} min today`
+                  : "No sessions yet. Start one to build a streak."}
               </p>
             </motion.div>
           )}

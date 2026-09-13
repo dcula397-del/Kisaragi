@@ -12,6 +12,7 @@ import BookmarksPage from "./pages/BookmarksPage";
 import NotesPage from "./pages/NotesPage";
 import ResearchPage from "./pages/ResearchPage";
 import ComingSoon from "./pages/ComingSoon";
+import FocusTimer from "./components/FocusTimer";
 
 /**
  * Drop your artwork into the `public/` folder and set the paths here.
@@ -110,6 +111,8 @@ export default function App() {
           </footer>
         </div>
       </main>
+
+      <FocusTimer />
     </div>
   );
 }

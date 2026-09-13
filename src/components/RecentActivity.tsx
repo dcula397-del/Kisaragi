@@ -3,7 +3,7 @@
 // ============================================================
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Bookmark, NotebookPen, PenLine, Sparkles, Star, Trash2 } from "lucide-react";
+import { Bookmark, NotebookPen, PenLine, Sparkles, Star, Timer, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useActivity, type ActivityEntry, type ActivityKind } from "../hooks/useActivity";
 import { useBookmarks } from "../hooks/useBookmarks";
@@ -45,6 +45,12 @@ const KIND_META: Record<
     label: "Deleted note",
     accent: "from-rose-400 to-pink-500",
     tagColor: "border-rose-400/25 bg-rose-500/10 text-rose-200",
+  },
+  "focus-complete": {
+    icon: Timer,
+    label: "Focus",
+    accent: "from-emerald-400 to-teal-500",
+    tagColor: "border-emerald-400/25 bg-emerald-500/10 text-emerald-200",
   },
 };
 
@@ -152,7 +158,9 @@ export default function RecentActivity({
             const meta = KIND_META[entry.kind];
             const Icon = meta.icon;
             const bookmarkable =
-              entry.kind !== "bookmark-remove" && entry.kind !== "note-remove";
+              entry.kind !== "bookmark-remove" &&
+              entry.kind !== "note-remove" &&
+              entry.kind !== "focus-complete";
             const saved = isBookmarked(entry.sourceId);
 
             return (

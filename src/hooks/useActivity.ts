@@ -9,20 +9,16 @@ export type ActivityKind =
   | "bookmark-remove"
   | "note-add"
   | "note-update"
-  | "note-remove";
+  | "note-remove"
+  | "focus-complete";
 
 export interface ActivityEntry {
   id: string;
   kind: ActivityKind;
-  /** The id of the thing this entry refers to (bookmark id, note id, …) */
   sourceId: string;
-  /** Short human-readable title, e.g. the note title or bookmark title */
   title: string;
-  /** Optional longer description */
   description?: string;
-  /** Optional tag (e.g. "Notes", "Bookmarks") */
   tag?: string;
-  /** ISO timestamp */
   at: string;
 }
 
@@ -33,9 +29,6 @@ function generateId(): string {
   return `a_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/**
- * Pure logger — callable from other hooks without needing the hook itself.
- */
 export function logActivity(
   entry: Omit<ActivityEntry, "id" | "at">
 ): void {
@@ -56,7 +49,7 @@ export function logActivity(
       })
     );
   } catch {
-    // ignore — activity log is best-effort
+    // ignore
   }
 }
 
