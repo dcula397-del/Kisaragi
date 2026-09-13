@@ -114,7 +114,7 @@ export default function App() {
           <HeaderBanner
             onMenuClick={() => setMobileOpen(true)}
             characterImagePath={CHARACTER_IMAGE_PATH}
-            userName="Senpai"
+            userName="Thu Rai"
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             registerSearchFocus={(fn) => {

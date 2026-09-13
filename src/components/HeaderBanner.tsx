@@ -33,7 +33,7 @@ function getGreeting(hour: number): string {
 export default function HeaderBanner({
   onMenuClick,
   characterImagePath,
-  userName = "Senpai",
+  userName = "Thu Rain",
   searchQuery,
   onSearchChange,
   registerSearchFocus,
@@ -263,7 +263,7 @@ export default function HeaderBanner({
                 Today&apos;s Companion
               </p>
               <p className="mt-0.5 text-sm font-medium text-slate-100">
-                Kisaragi — Study Mode
+                Kisaragi — Study App
               </p>
             </div>
           </div>

@@ -27,7 +27,7 @@ const QUICK_LINKS: QuickLink[] = [
   {
     id: "q2",
     label: "Notes",
-    hint: "Your written thoughts",
+    hint: "Note stuffs",
     icon: NotebookPen,
     target: "notes",
   },
