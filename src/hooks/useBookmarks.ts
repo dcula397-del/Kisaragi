@@ -3,6 +3,7 @@
 // ============================================================
 import { useCallback, useMemo } from "react";
 import { useLocalStorage } from "./useLocalStorage";
+import { logActivity } from "./useActivity";
 
 export interface Bookmark {
   id: string;
@@ -34,6 +35,12 @@ export function useBookmarks() {
     (bookmark: Omit<Bookmark, "savedAt">) => {
       setBookmarks((prev) => {
         if (prev.some((b) => b.id === bookmark.id)) return prev;
+        logActivity({
+          kind: "bookmark-add",
+          title: bookmark.title,
+          description: bookmark.description,
+          tag: "Bookmarks",
+        });
         return [
           { ...bookmark, savedAt: new Date().toISOString() },
           ...prev,
@@ -46,7 +53,17 @@ export function useBookmarks() {
   /** Remove a bookmark by id. */
   const removeBookmark = useCallback(
     (id: string) => {
-      setBookmarks((prev) => prev.filter((b) => b.id !== id));
+      setBookmarks((prev) => {
+        const target = prev.find((b) => b.id === id);
+        if (target) {
+          logActivity({
+            kind: "bookmark-remove",
+            title: target.title,
+            tag: "Bookmarks",
+          });
+        }
+        return prev.filter((b) => b.id !== id);
+      });
     },
     [setBookmarks]
   );
@@ -59,9 +76,20 @@ export function useBookmarks() {
         const exists = prev.some((b) => b.id === bookmark.id);
         if (exists) {
           nowSaved = false;
+          logActivity({
+            kind: "bookmark-remove",
+            title: bookmark.title,
+            tag: "Bookmarks",
+          });
           return prev.filter((b) => b.id !== bookmark.id);
         }
         nowSaved = true;
+        logActivity({
+          kind: "bookmark-add",
+          title: bookmark.title,
+          description: bookmark.description,
+          tag: "Bookmarks",
+        });
         return [
           { ...bookmark, savedAt: new Date().toISOString() },
           ...prev,

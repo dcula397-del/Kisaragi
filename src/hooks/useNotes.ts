@@ -3,6 +3,7 @@
 // ============================================================
 import { useCallback, useMemo } from "react";
 import { useLocalStorage } from "./useLocalStorage";
+import { logActivity } from "./useActivity";
 
 export interface Note {
   id: string;
@@ -42,6 +43,11 @@ export function useNotes() {
         updatedAt: now,
       };
       setNotes((prev) => [note, ...prev]);
+      logActivity({
+        kind: "note-add",
+        title: note.title || "Untitled note",
+        tag: "Notes",
+      });
       return note;
     },
     [setNotes]
@@ -51,11 +57,15 @@ export function useNotes() {
   const updateNote = useCallback(
     (id: string, patch: Partial<Pick<Note, "title" | "body">>) => {
       setNotes((prev) =>
-        prev.map((n) =>
-          n.id === id
-            ? { ...n, ...patch, updatedAt: new Date().toISOString() }
-            : n
-        )
+        prev.map((n) => {
+          if (n.id !== id) return n;
+          logActivity({
+            kind: "note-update",
+            title: (patch.title ?? n.title) || "Untitled note",
+            tag: "Notes",
+          });
+          return { ...n, ...patch, updatedAt: new Date().toISOString() };
+        })
       );
     },
     [setNotes]
@@ -64,7 +74,17 @@ export function useNotes() {
   /** Remove a note by id. */
   const removeNote = useCallback(
     (id: string) => {
-      setNotes((prev) => prev.filter((n) => n.id !== id));
+      setNotes((prev) => {
+        const target = prev.find((n) => n.id === id);
+        if (target) {
+          logActivity({
+            kind: "note-remove",
+            title: target.title || "Untitled note",
+            tag: "Notes",
+          });
+        }
+        return prev.filter((n) => n.id !== id);
+      });
     },
     [setNotes]
   );
@@ -76,11 +96,6 @@ export function useNotes() {
 
   const count = useMemo(() => notes.length, [notes]);
 
-  /**
-   * Notes sorted by last-edited, newest first.
-   * Note: `notes` is already prepended on add, but if a user edits an
-   * old note, this re-sorts so it bubbles to the top of any UI list.
-   */
   const sortedNotes = useMemo(
     () =>
       [...notes].sort(

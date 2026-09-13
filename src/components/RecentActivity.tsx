@@ -3,94 +3,68 @@
 // ============================================================
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowUpRight,
-  BookOpen,
-  Code2,
-  FileText,
-  GraduationCap,
-  Microscope,
-  Sparkles,
-  Star,
-} from "lucide-react";
-import type { ActivityItem } from "../types";
+import { Bookmark, NotebookPen, PenLine, Sparkles, Star, Trash2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useActivity, type ActivityEntry, type ActivityKind } from "../hooks/useActivity";
 import { useBookmarks } from "../hooks/useBookmarks";
 
 interface RecentActivityProps {
   searchQuery?: string;
 }
 
-const ACTIVITIES: ActivityItem[] = [
-  {
-    id: "a1",
-    title: "Completed Quadratic Equations set",
-    description: "Solved 24/24 problems · 96% accuracy across two attempts.",
-    tag: "IGCSE",
-    tagColor: "border-pink-400/25 bg-pink-500/10 text-pink-200",
-    icon: GraduationCap,
-    timestamp: new Date(Date.now() - 1000 * 60 * 8),
-    accent: "from-pink-400 to-fuchsia-500",
+const KIND_META: Record<
+  ActivityKind,
+  { icon: LucideIcon; label: string; accent: string; tagColor: string }
+> = {
+  "bookmark-add": {
+    icon: Bookmark,
+    label: "Bookmarked",
+    accent: "from-fuchsia-400 to-purple-500",
+    tagColor: "border-fuchsia-400/25 bg-fuchsia-500/10 text-fuchsia-200",
   },
-  {
-    id: "a2",
-    title: "Refactored the auth middleware",
-    description: "Migrated session handling to refresh-token rotation.",
-    tag: "Programming",
-    tagColor: "border-purple-400/25 bg-purple-500/10 text-purple-200",
-    icon: Code2,
-    timestamp: new Date(Date.now() - 1000 * 60 * 47),
+  "bookmark-remove": {
+    icon: Star,
+    label: "Removed bookmark",
+    accent: "from-slate-400 to-slate-500",
+    tagColor: "border-white/10 bg-white/5 text-slate-300",
+  },
+  "note-add": {
+    icon: NotebookPen,
+    label: "Created note",
     accent: "from-purple-400 to-indigo-500",
+    tagColor: "border-purple-400/25 bg-purple-500/10 text-purple-200",
   },
-  {
-    id: "a3",
-    title: "Added 14 flashcards to Biology deck",
-    description: "Cell respiration & ATP synthesis — spaced repetition queued.",
-    tag: "IGCSE",
-    tagColor: "border-pink-400/25 bg-pink-500/10 text-pink-200",
-    icon: BookOpen,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    accent: "from-fuchsia-400 to-pink-500",
-  },
-  {
-    id: "a4",
-    title: "Drafted literature review outline",
-    description: "Neural rendering pipelines — 9 sources cited so far.",
-    tag: "Research",
-    tagColor: "border-indigo-400/25 bg-indigo-500/10 text-indigo-200",
-    icon: Microscope,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 22),
+  "note-update": {
+    icon: PenLine,
+    label: "Edited note",
     accent: "from-indigo-400 to-purple-500",
+    tagColor: "border-indigo-400/25 bg-indigo-500/10 text-indigo-200",
   },
-  {
-    id: "a5",
-    title: "Exported revision notes to PDF",
-    description: "Physics — Waves & Optics, 32 pages with diagrams.",
-    tag: "Notes",
-    tagColor: "border-rose-400/25 bg-rose-500/10 text-rose-200",
-    icon: FileText,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
+  "note-remove": {
+    icon: Trash2,
+    label: "Deleted note",
     accent: "from-rose-400 to-pink-500",
+    tagColor: "border-rose-400/25 bg-rose-500/10 text-rose-200",
   },
-];
+};
 
-function formatRelative(date: Date, reference: number = Date.now()): string {
-  const seconds = Math.floor((reference - date.getTime()) / 1000);
+function formatRelative(iso: string, reference: number = Date.now()): string {
+  const then = new Date(iso).getTime();
+  const seconds = Math.floor((reference - then) / 1000);
 
   if (seconds < 45) return "just now";
-
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
-
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
-
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-
   const weeks = Math.floor(days / 7);
   if (weeks < 5) return `${weeks}w ago`;
-
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 const listVariants = {
@@ -111,6 +85,7 @@ export default function RecentActivity({
   searchQuery = "",
 }: RecentActivityProps) {
   const [now, setNow] = useState(() => Date.now());
+  const { entries } = useActivity();
   const { isBookmarked, toggleBookmark } = useBookmarks();
 
   useEffect(() => {
@@ -118,15 +93,14 @@ export default function RecentActivity({
     return () => window.clearInterval(id);
   }, []);
 
-  // Filter by search query (matches title, description, or tag)
   const query = searchQuery.trim().toLowerCase();
-  const visibleActivities = query
-    ? ACTIVITIES.filter((a) =>
-        [a.title, a.description, a.tag].some((field) =>
-          field.toLowerCase().includes(query)
+  const visible: ActivityEntry[] = query
+    ? entries.filter((e) =>
+        [e.title, e.description ?? "", e.tag ?? ""].some((f) =>
+          f.toLowerCase().includes(query)
         )
       )
-    : ACTIVITIES;
+    : entries;
 
   return (
     <motion.section
@@ -137,7 +111,6 @@ export default function RecentActivity({
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-300/40 to-transparent" />
 
-      {/* Header */}
       <header className="flex items-center justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
         <div className="flex items-center gap-3">
           <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5">
@@ -149,57 +122,51 @@ export default function RecentActivity({
             </h2>
             <p className="text-[11px] text-slate-500">
               {query
-                ? `${visibleActivities.length} match${
-                    visibleActivities.length === 1 ? "" : "es"
-                  }`
-                : "Your latest moves across the console"}
+                ? `${visible.length} match${visible.length === 1 ? "" : "es"}`
+                : entries.length === 0
+                  ? "Nothing yet"
+                  : "Your latest moves across the console"}
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          className="group inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-100"
-        >
-          View all
-          <ArrowUpRight className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </button>
       </header>
 
-      {/* Empty search result */}
-      {visibleActivities.length === 0 && (
+      {visible.length === 0 && (
         <div className="px-6 py-12 text-center">
           <p className="text-sm text-slate-500">
-            No activity matches "{searchQuery}"
+            {query
+              ? `No activity matches "${searchQuery}"`
+              : "No activity yet — add a note or bookmark to see it here."}
           </p>
         </div>
       )}
 
-      {/* List */}
-      {visibleActivities.length > 0 && (
+      {visible.length > 0 && (
         <motion.ul
           variants={listVariants}
           initial="hidden"
           animate="show"
           className="divide-y divide-white/[0.05]"
         >
-          {visibleActivities.map((activity) => {
-            const Icon = activity.icon;
+          {visible.map((entry) => {
+            const meta = KIND_META[entry.kind];
+            const Icon = meta.icon;
+            const bookmarkable = entry.kind !== "bookmark-remove" && entry.kind !== "note-remove";
+            const saved = isBookmarked(entry.id);
 
             return (
               <motion.li
-                key={activity.id}
+                key={entry.id}
                 variants={rowVariants}
                 className="group relative px-6 py-4 transition-colors hover:bg-white/[0.03]"
               >
-                {/* left accent bar on hover */}
                 <span
-                  className={`absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-r-full bg-gradient-to-b ${activity.accent} transition-all duration-300 group-hover:h-10`}
+                  className={`absolute left-0 top-1/2 h-0 w-[2px] -translate-y-1/2 rounded-r-full bg-gradient-to-b ${meta.accent} transition-all duration-300 group-hover:h-10`}
                 />
 
                 <div className="flex items-start gap-4">
                   <div
-                    className={`mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-gradient-to-br ${activity.accent} bg-opacity-10 shadow-lg shadow-black/30 transition-transform duration-300 group-hover:scale-105`}
+                    className={`mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-gradient-to-br ${meta.accent} bg-opacity-10 shadow-lg shadow-black/30 transition-transform duration-300 group-hover:scale-105`}
                   >
                     <Icon className="h-[18px] w-[18px] text-white/90" />
                   </div>
@@ -207,57 +174,53 @@ export default function RecentActivity({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <h3 className="truncate text-sm font-medium text-slate-100">
-                        {activity.title}
+                        {entry.title}
                       </h3>
-
                       <span
-                        className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${activity.tagColor}`}
+                        className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${meta.tagColor}`}
                       >
-                        {activity.tag}
+                        {meta.label}
                       </span>
                     </div>
 
-                    <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-slate-400">
-                      {activity.description}
-                    </p>
+                    {entry.description && (
+                      <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-slate-400">
+                        {entry.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="mt-0.5 flex shrink-0 items-center gap-2">
                     <time
-                      dateTime={activity.timestamp.toISOString()}
+                      dateTime={entry.at}
                       className="whitespace-nowrap text-[11px] tabular-nums text-slate-500"
-                      title={activity.timestamp.toLocaleString()}
+                      title={new Date(entry.at).toLocaleString()}
                     >
-                      {formatRelative(activity.timestamp, now)}
+                      {formatRelative(entry.at, now)}
                     </time>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleBookmark({
-                          id: activity.id,
-                          title: activity.title,
-                          description: activity.description,
-                          tag: activity.tag,
-                          tagColor: activity.tagColor,
-                        })
-                      }
-                      aria-label={
-                        isBookmarked(activity.id)
-                          ? "Remove bookmark"
-                          : "Add bookmark"
-                      }
-                      className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-200 focus:opacity-100 data-[bookmarked=true]:opacity-100"
-                      data-bookmarked={isBookmarked(activity.id)}
-                    >
-                      <Star
-                        className={`h-3.5 w-3.5 transition-colors ${
-                          isBookmarked(activity.id)
-                            ? "fill-pink-300 text-pink-300"
-                            : "text-slate-500"
-                        }`}
-                      />
-                    </button>
+                    {bookmarkable && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleBookmark({
+                            id: entry.id,
+                            title: entry.title,
+                            description: entry.description,
+                            tag: entry.tag,
+                          })
+                        }
+                        aria-label={saved ? "Remove bookmark" : "Add bookmark"}
+                        className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-500 opacity-0 transition-all group-hover:opacity-100 hover:border-fuchsia-400/30 hover:bg-fuchsia-500/10 hover:text-pink-200 focus:opacity-100 data-[bookmarked=true]:opacity-100"
+                        data-bookmarked={saved}
+                      >
+                        <Star
+                          className={`h-3.5 w-3.5 transition-colors ${
+                            saved ? "fill-pink-300 text-pink-300" : "text-slate-500"
+                          }`}
+                        />
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.li>
