@@ -24,19 +24,18 @@ export function useBookmarks() {
     []
   );
 
-  /** Is a given id already bookmarked? */
   const isBookmarked = useCallback(
     (id: string) => bookmarks.some((b) => b.id === id),
     [bookmarks]
   );
 
-  /** Add a bookmark if not present. Idempotent. */
   const addBookmark = useCallback(
     (bookmark: Omit<Bookmark, "savedAt">) => {
       setBookmarks((prev) => {
         if (prev.some((b) => b.id === bookmark.id)) return prev;
         logActivity({
           kind: "bookmark-add",
+          sourceId: bookmark.id,
           title: bookmark.title,
           description: bookmark.description,
           tag: "Bookmarks",
@@ -50,7 +49,6 @@ export function useBookmarks() {
     [setBookmarks]
   );
 
-  /** Remove a bookmark by id. */
   const removeBookmark = useCallback(
     (id: string) => {
       setBookmarks((prev) => {
@@ -58,6 +56,7 @@ export function useBookmarks() {
         if (target) {
           logActivity({
             kind: "bookmark-remove",
+            sourceId: target.id,
             title: target.title,
             tag: "Bookmarks",
           });
@@ -68,7 +67,6 @@ export function useBookmarks() {
     [setBookmarks]
   );
 
-  /** Toggle: add if missing, remove if present. Returns the new state. */
   const toggleBookmark = useCallback(
     (bookmark: Omit<Bookmark, "savedAt">) => {
       let nowSaved = false;
@@ -78,6 +76,7 @@ export function useBookmarks() {
           nowSaved = false;
           logActivity({
             kind: "bookmark-remove",
+            sourceId: bookmark.id,
             title: bookmark.title,
             tag: "Bookmarks",
           });
@@ -86,6 +85,7 @@ export function useBookmarks() {
         nowSaved = true;
         logActivity({
           kind: "bookmark-add",
+          sourceId: bookmark.id,
           title: bookmark.title,
           description: bookmark.description,
           tag: "Bookmarks",
@@ -100,12 +100,10 @@ export function useBookmarks() {
     [setBookmarks]
   );
 
-  /** Clear everything. */
   const clearBookmarks = useCallback(() => {
     setBookmarks([]);
   }, [setBookmarks]);
 
-  /** Count (memoized so it doesn't rebuild on every render if used in deps) */
   const count = useMemo(() => bookmarks.length, [bookmarks]);
 
   return {

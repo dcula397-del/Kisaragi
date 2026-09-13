@@ -151,8 +151,9 @@ export default function RecentActivity({
           {visible.map((entry) => {
             const meta = KIND_META[entry.kind];
             const Icon = meta.icon;
-            const bookmarkable = entry.kind !== "bookmark-remove" && entry.kind !== "note-remove";
-            const saved = isBookmarked(entry.id);
+            const bookmarkable =
+              entry.kind !== "bookmark-remove" && entry.kind !== "note-remove";
+            const saved = isBookmarked(entry.sourceId);
 
             return (
               <motion.li
@@ -204,7 +205,7 @@ export default function RecentActivity({
                         type="button"
                         onClick={() =>
                           toggleBookmark({
-                            id: entry.id,
+                            id: entry.sourceId,
                             title: entry.title,
                             description: entry.description,
                             tag: entry.tag,

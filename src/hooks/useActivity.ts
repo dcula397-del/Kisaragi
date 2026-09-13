@@ -14,6 +14,8 @@ export type ActivityKind =
 export interface ActivityEntry {
   id: string;
   kind: ActivityKind;
+  /** The id of the thing this entry refers to (bookmark id, note id, …) */
+  sourceId: string;
   /** Short human-readable title, e.g. the note title or bookmark title */
   title: string;
   /** Optional longer description */
@@ -25,7 +27,6 @@ export interface ActivityEntry {
 }
 
 const STORAGE_KEY = "kisaragi.activity";
-/** Keep the log from growing forever. */
 const MAX_ENTRIES = 100;
 
 function generateId(): string {
@@ -34,7 +35,6 @@ function generateId(): string {
 
 /**
  * Pure logger — callable from other hooks without needing the hook itself.
- * Keeps a single source of truth in localStorage.
  */
 export function logActivity(
   entry: Omit<ActivityEntry, "id" | "at">
@@ -49,7 +49,6 @@ export function logActivity(
     };
     const trimmed = [next, ...existing].slice(0, MAX_ENTRIES);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    // Notify same-tab subscribers via the storage-event shim.
     window.dispatchEvent(
       new StorageEvent("storage", {
         key: STORAGE_KEY,
