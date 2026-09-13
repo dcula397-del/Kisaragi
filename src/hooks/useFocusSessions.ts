@@ -5,8 +5,11 @@ import { useCallback, useMemo } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { logActivity } from "./useActivity";
 
+export type SessionKind = "focus" | "break";
+
 export interface FocusSession {
   id: string;
+  kind: SessionKind;
   /** Length of the session in minutes */
   minutes: number;
   /** ISO timestamp of when the session was completed */
@@ -34,18 +37,22 @@ export function useFocusSessions() {
   );
 
   const addSession = useCallback(
-    (minutes: number) => {
+    (minutes: number, kind: SessionKind = "focus") => {
       const session: FocusSession = {
         id: generateId(),
+        kind,
         minutes,
         completedAt: new Date().toISOString(),
       };
-      setSessions((prev) => [session, ...prev]);
+      setSessions((prev: FocusSession[]) => [session, ...prev]);
       logActivity({
         kind: "focus-complete",
         sourceId: session.id,
-        title: `Focus session · ${minutes} min`,
-        tag: "Focus",
+        title:
+          kind === "break"
+            ? `Break · ${minutes} min`
+            : `Focus session · ${minutes} min`,
+        tag: kind === "break" ? "Break" : "Focus",
       });
       return session;
     },
@@ -56,24 +63,28 @@ export function useFocusSessions() {
     setSessions([]);
   }, [setSessions]);
 
-  /** Total minutes logged today (local time). */
+  /** Focus sessions only (excludes breaks). */
+  const focusSessions = useMemo(
+    () => sessions.filter((s) => s.kind === "focus"),
+    [sessions]
+  );
+
+  /** Total focus minutes logged today (local time). Breaks excluded. */
   const minutesToday = useMemo(() => {
     const today = dayKey(new Date());
-    return sessions
+    return focusSessions
       .filter((s) => dayKey(new Date(s.completedAt)) === today)
       .reduce((sum, s) => sum + s.minutes, 0);
-  }, [sessions]);
+  }, [focusSessions]);
 
   /**
-   * Consecutive days ending today (or yesterday) with ≥1 session.
-   * If today has no session but yesterday does, the streak is still "alive"
-   * — you just haven't studied yet today.
+   * Consecutive days with ≥1 focus session. Today or yesterday keeps it alive.
    */
   const streak = useMemo(() => {
-    if (sessions.length === 0) return 0;
+    if (focusSessions.length === 0) return 0;
 
     const days = new Set(
-      sessions.map((s) => dayKey(new Date(s.completedAt)))
+      focusSessions.map((s) => dayKey(new Date(s.completedAt)))
     );
 
     const today = new Date();
@@ -82,28 +93,30 @@ export function useFocusSessions() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayKey = dayKey(yesterday);
 
-    // Streak only "counts" if today or yesterday has a session.
-    let cursor = days.has(todayKey)
+    const start: Date | null = days.has(todayKey)
       ? today
       : days.has(yesterdayKey)
         ? yesterday
         : null;
 
-    if (!cursor) return 0;
+    if (start === null) return 0;
 
     let count = 0;
+    let cursor: Date = start;   // ← Date, not Date | null
     while (days.has(dayKey(cursor))) {
       count++;
-      cursor = new Date(cursor);
-      cursor.setDate(cursor.getDate() - 1);
+      const prev = new Date(cursor);
+      prev.setDate(prev.getDate() - 1);
+      cursor = prev;
     }
     return count;
-  }, [sessions]);
+  }, [focusSessions]);
 
-  const totalSessions = useMemo(() => sessions.length, [sessions]);
+  const totalSessions = useMemo(() => focusSessions.length, [focusSessions]);
 
   return {
     sessions,
+    focusSessions,
     totalSessions,
     minutesToday,
     streak,

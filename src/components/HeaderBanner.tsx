@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Bell, CalendarDays, Menu, Search, Sparkles } from "lucide-react";
 import CharacterBanner from "./CharacterBanner";
+import { useFocusSessions } from "../hooks/useFocusSessions";
+import { useBookmarks } from "../hooks/useBookmarks";
+import { useNotes } from "../hooks/useNotes";
 
 interface HeaderBannerProps {
   onMenuClick: () => void;
@@ -18,9 +21,10 @@ interface HeaderBannerProps {
 
 function getGreeting(hour: number): string {
   if (hour < 5) return "Still awake";
-  if (hour < 12) return "Good morning";
+  if (hour < 12) return "Ohayo";          // morning — a little personal
   if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 22) return "Good evening";
+  return "Late night again";              // 10pm–midnight, your usual time
 }
 
 export default function HeaderBanner({
@@ -32,9 +36,51 @@ export default function HeaderBanner({
 }: HeaderBannerProps) {
   const [now, setNow] = useState<Date>(() => new Date());
 
+  // --- Live clock tick ---
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  // --- Real data for the header ---
+  const { streak, minutesToday } = useFocusSessions();
+  const { count: bookmarkCount } = useBookmarks();
+  const { count: noteCount } = useNotes();
+
+  // Is a focus session currently running? Read from the persisted state
+  // that FocusTimer writes to localStorage.
+  const [focusRunning, setFocusRunning] = useState<boolean>(() => {
+    try {
+      const raw = window.localStorage.getItem("kisaragi.focus.active");
+      if (!raw) return false;
+      const parsed = JSON.parse(raw) as { startedAt: number | null };
+      return parsed.startedAt !== null;
+    } catch {
+      return false;
+    }
+  });
+
+  // Keep the badge in sync while the timer runs in another component.
+  useEffect(() => {
+    function sync() {
+      try {
+        const raw = window.localStorage.getItem("kisaragi.focus.active");
+        if (!raw) {
+          setFocusRunning(false);
+          return;
+        }
+        const parsed = JSON.parse(raw) as { startedAt: number | null };
+        setFocusRunning(parsed.startedAt !== null);
+      } catch {
+        setFocusRunning(false);
+      }
+    }
+    window.addEventListener("storage", sync);
+    const id = window.setInterval(sync, 1000);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.clearInterval(id);
+    };
   }, []);
 
   const isMac = useMemo(
@@ -131,10 +177,17 @@ export default function HeaderBanner({
           </div>
 
           <div className="mb-6 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/25 bg-fuchsia-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-fuchsia-200">
-              <Sparkles className="h-3 w-3" />
-              Session Live
-            </span>
+            {focusRunning ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                Session Live
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/25 bg-fuchsia-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-fuchsia-200">
+                <Sparkles className="h-3 w-3" />
+                Ready when you are
+              </span>
+            )}
           </div>
 
           <h1 className="text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl">
@@ -145,8 +198,13 @@ export default function HeaderBanner({
           </h1>
 
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-400">
-            Your library is synced and three research threads are waiting. Pick up
-            where you left off — the night is still young.
+            {focusRunning
+              ? "Stay with it. The timer is running — one breath at a time."
+              : streak > 0 && minutesToday > 0
+                ? `${streak} day${streak === 1 ? "" : "s"} in a row · ${minutesToday} min focused today. Want to add more?`
+                : bookmarkCount + noteCount === 0
+                  ? "Nothing here yet. Add a note or save a Wikipedia result to get started."
+                  : `${bookmarkCount} bookmark${bookmarkCount === 1 ? "" : "s"} and ${noteCount} note${noteCount === 1 ? "" : "s"} saved so far. Ready for a focus session?`}
           </p>
 
           {/* Live clock */}

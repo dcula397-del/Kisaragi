@@ -5,13 +5,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pause, Play, RotateCcw, Timer, X } from "lucide-react";
 import { useFocusSessions } from "../hooks/useFocusSessions";
+import { useSettings } from "../hooks/useSettings";
 
 type Preset = 25 | 5 | 15;
 
-const PRESETS: { minutes: Preset; label: string }[] = [
-  { minutes: 25, label: "Focus" },
-  { minutes: 5, label: "Short break" },
-  { minutes: 15, label: "Quick" },
+const PRESETS: { minutes: Preset; label: string; kind: "focus" | "break" }[] = [
+  { minutes: 25, label: "Focus", kind: "focus" },
+  { minutes: 5, label: "Short break", kind: "break" },
+  { minutes: 15, label: "Quick", kind: "focus" },
 ];
 
 const PERSIST_KEY = "kisaragi.focus.active";
@@ -62,7 +63,7 @@ export default function FocusTimer() {
 
   // Epoch ms when the current run segment started (null if paused).
   const startedAtRef = useRef<number | null>(null);
-
+  const { settings } = useSettings();
   // ---- Restore from localStorage on mount ----
   useEffect(() => {
     const saved = loadPersisted();
@@ -92,10 +93,11 @@ export default function FocusTimer() {
     startedAtRef.current = null;
     setRemaining(minutes * 60);
     savePersisted(null);
-    addSession(minutes);
+    const presetKind = PRESETS.find((p) => p.minutes === minutes)?.kind ?? "focus";
+    addSession(minutes, presetKind);
 
-    // soft chime (best-effort; silent if autoplay is blocked)
-    try {
+    // soft chime (best-effort; silent if autoplay is blocked or sound is off)
+    if (settings.soundEnabled) try {
       const Ctx =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext })
