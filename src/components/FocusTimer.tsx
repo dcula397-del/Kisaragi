@@ -87,6 +87,16 @@ export default function FocusTimer() {
     }
   }, []);
 
+  // ---- Allow other components (command palette) to open us ----
+  useEffect(() => {
+    function handleOpen() {
+      setOpen(true);
+    }
+    window.addEventListener("kisaragi:open-focus", handleOpen);
+    return () =>
+      window.removeEventListener("kisaragi:open-focus", handleOpen);
+  }, []);
+
   // ---- Completion handler ----
   const complete = useCallback(() => {
     setRunning(false);

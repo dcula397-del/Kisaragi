@@ -2,6 +2,9 @@
 // src/App.tsx
 // ============================================================
 import { useEffect, useState } from "react";
+import { useCallback, useRef } from "react";
+import CommandPalette from "./components/CommandPalette";
+import { useCommandPalette } from "./hooks/useCommandPalette";
 import Sidebar from "./components/Sidebar";
 import HeaderBanner from "./components/HeaderBanner";
 import StatCards from "./components/StatCards";
@@ -50,6 +53,16 @@ export default function App() {
       window.removeEventListener("storage", sync);
       window.clearInterval(id);
     };
+  }, []);
+
+  const palette = useCommandPalette();
+
+  // We need a way to focus the header search input from the palette.
+  // The HeaderBanner owns the input, so we hand it a ref via a wrapper div.
+  // Simplest cross-component trick: expose a global function via window.
+  const searchFocusRef = useRef<(() => void) | null>(null);
+  const focusSearch = useCallback(() => {
+    searchFocusRef.current?.();
   }, []);
 
   return (
@@ -104,6 +117,9 @@ export default function App() {
             userName="Senpai"
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            registerSearchFocus={(fn) => {
+              searchFocusRef.current = fn;
+            }}
           />
 
           {activeNav === "dashboard" && (
@@ -137,6 +153,12 @@ export default function App() {
           </footer>
         </div>
       </main>
+      <CommandPalette
+        open={palette.open}
+        onClose={palette.closePalette}
+        onNavigate={setActiveNav}
+        onFocusSearch={focusSearch}
+      />
 
       <FocusTimer />
     </div>

@@ -18,6 +18,8 @@ interface HeaderBannerProps {
   searchQuery: string;
 
   onSearchChange: (value: string) => void;
+  /** Register a callback that focuses the search input. Called once on mount. */
+  registerSearchFocus?: (fn: () => void) => void;
 }
 
 function getGreeting(hour: number): string {
@@ -34,6 +36,7 @@ export default function HeaderBanner({
   userName = "Senpai",
   searchQuery,
   onSearchChange,
+  registerSearchFocus,
 }: HeaderBannerProps) {
   const [now, setNow] = useState<Date>(() => new Date());
 
@@ -114,24 +117,26 @@ export default function HeaderBanner({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Ctrl+K (or Cmd+K) focuses the search; Escape clears + blurs.
+  // Register a focus helper with the parent (palette uses this).
+  useEffect(() => {
+    if (!registerSearchFocus) return;
+    registerSearchFocus(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
+  }, [registerSearchFocus]);
+
+  // Escape clears + blurs the search field (only when it has focus).
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      const isK = e.key.toLowerCase() === "k";
-      const isMod = e.ctrlKey || e.metaKey;
-
-      if (isMod && isK) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-
-      if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
+      if (
+        e.key === "Escape" &&
+        document.activeElement === searchInputRef.current
+      ) {
         onSearchChange("");
         searchInputRef.current?.blur();
       }
     }
-
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onSearchChange]);
